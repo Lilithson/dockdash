@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { api } from '../api'
+import { api, ContainerStat, HostInfo } from '../api'
 
-function fmtBytes(b) {
+function fmtBytes(b: number | null | undefined): string {
   if (b == null) return '—'
   if (b < 1024) return b + ' B'
   if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'
@@ -9,7 +9,7 @@ function fmtBytes(b) {
   return (b / 1073741824).toFixed(2) + ' GB'
 }
 
-function UsageBar({ pct }) {
+function UsageBar({ pct }: { pct: number }) {
   const cls = pct > 80 ? 'danger' : pct > 60 ? 'warning' : ''
   return (
     <div style={{ width: 120 }}>
@@ -21,7 +21,14 @@ function UsageBar({ pct }) {
   )
 }
 
-function StatCard({ label, value, sub, color }) {
+interface StatCardProps {
+  label: string
+  value: React.ReactNode
+  sub?: string
+  color?: string
+}
+
+function StatCard({ label, value, sub, color }: StatCardProps) {
   return (
     <div className="card">
       <div className="card-title">{label}</div>
@@ -31,8 +38,13 @@ function StatCard({ label, value, sub, color }) {
   )
 }
 
+interface StatsData {
+  host: HostInfo
+  containers: ContainerStat[]
+}
+
 export default function StatsPage() {
-  const [stats,   setStats]   = useState(null)
+  const [stats,   setStats]   = useState<StatsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
 
@@ -41,7 +53,7 @@ export default function StatsPage() {
       const data = await api.stats()
       setStats(data)
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setLoading(false)
     }
@@ -57,7 +69,7 @@ export default function StatsPage() {
 
   if (error) return <div className="error-msg">{error}</div>
 
-  const host = stats?.host || {}
+  const host = stats?.host || ({} as HostInfo)
   const containers = stats?.containers || []
   const running = containers.filter(c => c.status === 'running').length
   const stopped = containers.length - running

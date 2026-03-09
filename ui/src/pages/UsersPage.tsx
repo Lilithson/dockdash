@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react'
-import { api } from '../api'
+import { api, User } from '../api'
 import { UserContext } from '../App'
 
-function AddUserModal({ onClose, onAdded }) {
+interface AddUserModalProps {
+  onClose: () => void
+  onAdded: () => void
+}
+
+function AddUserModal({ onClose, onAdded }: AddUserModalProps) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [role,     setRole]     = useState('viewer')
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!username || !password) { setError('Username and password are required.'); return }
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
@@ -18,7 +23,7 @@ function AddUserModal({ onClose, onAdded }) {
       await api.userCreate(username, password, role)
       onAdded()
     } catch (err) {
-      setError(err.message)
+      setError((err as Error).message)
     } finally {
       setLoading(false)
     }
@@ -74,7 +79,7 @@ function AddUserModal({ onClose, onAdded }) {
   )
 }
 
-function roleBadge(role) {
+function roleBadge(role: string) {
   if (role === 'admin')    return <span className="badge badge-primary">admin</span>
   if (role === 'operator') return <span className="badge badge-info">operator</span>
   return <span className="badge badge-muted">viewer</span>
@@ -82,19 +87,19 @@ function roleBadge(role) {
 
 export default function UsersPage() {
   const { user: me }            = useContext(UserContext)
-  const [users,     setUsers]   = useState([])
+  const [users,     setUsers]   = useState<User[]>([])
   const [loading,   setLoading] = useState(true)
   const [error,     setError]   = useState('')
   const [showAdd,   setShowAdd] = useState(false)
-  const [confirmRm, setConfirmRm] = useState(null)
-  const [deleting,  setDeleting]  = useState(null)
+  const [confirmRm, setConfirmRm] = useState<User | null>(null)
+  const [deleting,  setDeleting]  = useState<number | null>(null)
 
   const fetchUsers = useCallback(async () => {
     try {
       const data = await api.users()
       setUsers(data || [])
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setLoading(false)
     }
@@ -102,13 +107,13 @@ export default function UsersPage() {
 
   useEffect(() => { fetchUsers() }, [fetchUsers])
 
-  async function handleDelete(u) {
+  async function handleDelete(u: User) {
     setDeleting(u.id)
     try {
       await api.userDelete(u.id)
       await fetchUsers()
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setDeleting(null)
     }

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { api } from './api'
+import { api, User } from './api'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import SetupPage from './pages/SetupPage'
@@ -11,16 +11,25 @@ import StatsPage from './pages/StatsPage'
 import AppStorePage from './pages/AppStorePage'
 import UsersPage from './pages/UsersPage'
 
-export const UserContext = React.createContext(null)
+interface UserContextType {
+  user: User | null
+  setUser: (user: User | null) => void
+}
 
-function RequireAuth({ children }) {
+export const UserContext = createContext<UserContextType>({ user: null, setUser: () => {} })
+
+export function useUserContext(): UserContextType {
+  return useContext(UserContext)
+}
+
+function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = api.getToken()
   if (!token) return <Navigate to="/login" replace />
-  return children
+  return <>{children}</>
 }
 
 export default function App() {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<User | null>(null)
   const [checked, setChecked] = useState(false)
   const [needsSetup, setNeedsSetup] = useState(false)
 
@@ -29,7 +38,7 @@ export default function App() {
     if (!token) { setChecked(true); return }
     api.me()
       .then(u => { setUser(u); setChecked(true) })
-      .catch(err => {
+      .catch((err: Error) => {
         if (err.message && err.message.toLowerCase().includes('setup')) {
           setNeedsSetup(true)
         }
@@ -69,7 +78,7 @@ export default function App() {
           } />
           <Route path="/dashboard" element={
             <RequireAuth>
-              <Layout user={user} onLogout={() => { api.clearToken(); setUser(null) }} />
+              <Layout onLogout={() => { api.clearToken(); setUser(null) }} />
             </RequireAuth>
           }>
             <Route index element={<Navigate to="stats" replace />} />
