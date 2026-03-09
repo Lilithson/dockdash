@@ -1,0 +1,34 @@
+# Binaries
+dockdash
+dockdash.exe
+
+# Go build artifacts
+*.test
+*.out
+coverage.txt
+
+# Frontend node_modules (never track)
+ui/node_modules/
+
+# Built frontend assets — tracked in git for go:embed.
+# Rebuild with: cd ui && npm run build
+
+# Data directory (runtime data)
+data/dockdash.db
+data/stacks/*.yml
+data/stacks/*.yaml
+
+# Editor/OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Env files with secrets
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+/tmp/

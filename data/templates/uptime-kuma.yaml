@@ -1,0 +1,12 @@
+# Uptime Kuma - Self-hosted monitoring tool
+name: uptime-kuma
+description: A fancy self-hosted monitoring tool
+image: louislam/uptime-kuma:latest
+category: Monitoring
+ports:
+  - host: 3001
+    container: 3001
+volumes:
+  - host: /opt/uptime-kuma/data
+    container: /app/data
+restart_policy: unless-stopped

@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  dockdash:
+    image: dockdash:latest
+    # To build locally instead of pulling:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dockdash
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount the Docker socket so DockDash can manage containers
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Persistent data: SQLite DB, stack YAMLs, templates
+      - dockdash_data:/data
+    environment:
+      # Strongly recommended: set a long random string as JWT secret.
+      # Generate one with: openssl rand -hex 32
+      - JWT_SECRET=${JWT_SECRET:-change_me_in_production}
+      - PORT=8080
+      - DATA_DIR=/data
+    # For security on a LAN, bind only to a specific interface:
+    # ports:
+    #   - "192.168.1.x:8080:8080"
+
+volumes:
+  dockdash_data:
+    driver: local
