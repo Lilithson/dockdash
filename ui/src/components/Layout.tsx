@@ -1,9 +1,14 @@
-import React, { useContext } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { UserContext } from '../App'
+import { useUserContext } from '../App'
 import { api } from '../api'
 
-const NAV = [
+interface NavItem {
+  to: string
+  icon: string
+  label: string
+}
+
+const NAV: NavItem[] = [
   { to: '/dashboard/stats',      icon: '📊', label: 'Dashboard' },
   { to: '/dashboard/containers', icon: '📦', label: 'Containers' },
   { to: '/dashboard/images',     icon: '🖼️',  label: 'Images' },
@@ -11,12 +16,12 @@ const NAV = [
   { to: '/dashboard/store',      icon: '🏪', label: 'App Store' },
 ]
 
-const ADMIN_NAV = [
+const ADMIN_NAV: NavItem[] = [
   { to: '/dashboard/users', icon: '👥', label: 'Users' },
 ]
 
-function pageTitleFromPath(pathname) {
-  const map = {
+function pageTitleFromPath(pathname: string): string {
+  const map: Record<string, string> = {
     '/dashboard/stats':      'Dashboard',
     '/dashboard/containers': 'Containers',
     '/dashboard/images':     'Images',
@@ -27,8 +32,12 @@ function pageTitleFromPath(pathname) {
   return map[pathname] || 'DockDash'
 }
 
-export default function Layout({ onLogout }) {
-  const { user } = useContext(UserContext)
+interface LayoutProps {
+  onLogout: () => void
+}
+
+export default function Layout({ onLogout }: LayoutProps) {
+  const { user } = useUserContext()
   const navigate = useNavigate()
   const location = useLocation()
 

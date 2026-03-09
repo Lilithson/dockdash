@@ -1,8 +1,12 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { api, User } from '../api'
 
-export default function SetupPage({ onSetup }) {
+interface SetupPageProps {
+  onSetup: (user: User) => void
+}
+
+export default function SetupPage({ onSetup }: SetupPageProps) {
   const [username, setUsername]   = useState('')
   const [password, setPassword]   = useState('')
   const [confirm,  setConfirm]    = useState('')
@@ -10,7 +14,7 @@ export default function SetupPage({ onSetup }) {
   const [loading,  setLoading]    = useState(false)
   const navigate = useNavigate()
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!username || !password || !confirm) { setError('Please fill in all fields.'); return }
     if (password !== confirm) { setError('Passwords do not match.'); return }
@@ -23,7 +27,7 @@ export default function SetupPage({ onSetup }) {
       onSetup(data.user)
       navigate('/dashboard/stats', { replace: true })
     } catch (err) {
-      setError(err.message || 'Setup failed')
+      setError((err as Error).message || 'Setup failed')
     } finally {
       setLoading(false)
     }

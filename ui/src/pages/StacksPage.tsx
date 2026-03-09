@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { api } from '../api'
+import { api, Stack } from '../api'
 
-function DeployModal({ onClose, onDeployed }) {
+interface DeployModalProps {
+  onClose: () => void
+  onDeployed: () => void
+}
+
+function DeployModal({ onClose, onDeployed }: DeployModalProps) {
   const [name,    setName]    = useState('')
   const [yaml,    setYaml]    = useState('')
   const [error,   setError]   = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function handleDeploy(e) {
+  async function handleDeploy(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) { setError('Stack name is required.'); return }
     if (!yaml.trim()) { setError('Compose YAML is required.'); return }
@@ -16,7 +21,7 @@ function DeployModal({ onClose, onDeployed }) {
       await api.stackCreate(name.trim(), yaml.trim())
       onDeployed()
     } catch (err) {
-      setError(err.message)
+      setError((err as Error).message)
     } finally {
       setLoading(false)
     }
@@ -64,7 +69,12 @@ function DeployModal({ onClose, onDeployed }) {
   )
 }
 
-function ComposeModal({ stackName, onClose }) {
+interface ComposeModalProps {
+  stackName: string
+  onClose: () => void
+}
+
+function ComposeModal({ stackName, onClose }: ComposeModalProps) {
   const [yaml,    setYaml]    = useState('')
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
@@ -72,7 +82,7 @@ function ComposeModal({ stackName, onClose }) {
   useEffect(() => {
     api.stackCompose(stackName)
       .then(data => setYaml(data?.compose_yaml || data?.content || JSON.stringify(data, null, 2)))
-      .catch(e => setError(e.message))
+      .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }, [stackName])
 
@@ -96,20 +106,20 @@ function ComposeModal({ stackName, onClose }) {
 }
 
 export default function StacksPage() {
-  const [stacks,    setStacks]    = useState([])
+  const [stacks,    setStacks]    = useState<Stack[]>([])
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
   const [showDeploy, setShowDeploy] = useState(false)
-  const [viewStack,  setViewStack]  = useState(null)
-  const [confirmRm,  setConfirmRm]  = useState(null)
-  const [removing,   setRemoving]   = useState(null)
+  const [viewStack,  setViewStack]  = useState<string | null>(null)
+  const [confirmRm,  setConfirmRm]  = useState<string | null>(null)
+  const [removing,   setRemoving]   = useState<string | null>(null)
 
   const fetchStacks = useCallback(async () => {
     try {
       const data = await api.stacks()
       setStacks(data || [])
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setLoading(false)
     }
@@ -117,13 +127,13 @@ export default function StacksPage() {
 
   useEffect(() => { fetchStacks() }, [fetchStacks])
 
-  async function handleRemove(name) {
+  async function handleRemove(name: string) {
     setRemoving(name)
     try {
       await api.stackRemove(name)
       await fetchStacks()
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setRemoving(null)
     }

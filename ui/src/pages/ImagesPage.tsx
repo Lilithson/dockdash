@@ -1,25 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { api } from '../api'
+import { api, Image } from '../api'
 
-function fmtSize(bytes) {
+function fmtSize(bytes: number | null | undefined): string {
   if (bytes == null) return '—'
   if (bytes < 1048576)    return (bytes / 1024).toFixed(1) + ' KB'
   if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB'
   return (bytes / 1073741824).toFixed(2) + ' GB'
 }
 
-function fmtDate(ts) {
+function fmtDate(ts: number | undefined): string {
   if (!ts) return '—'
   return new Date(ts * 1000).toLocaleDateString()
 }
 
-function PullModal({ onClose, onPulled }) {
+interface PullModalProps {
+  onClose: () => void
+  onPulled: () => void
+}
+
+function PullModal({ onClose, onPulled }: PullModalProps) {
   const [image,   setImage]   = useState('')
   const [status,  setStatus]  = useState('')
   const [pulling, setPulling] = useState(false)
   const [error,   setError]   = useState('')
 
-  async function handlePull(e) {
+  async function handlePull(e: React.FormEvent) {
     e.preventDefault()
     if (!image.trim()) { setError('Enter an image name.'); return }
     setError(''); setPulling(true); setStatus('Pulling...')
@@ -28,7 +33,7 @@ function PullModal({ onClose, onPulled }) {
       setStatus('Pull complete!')
       onPulled()
     } catch (err) {
-      setError(err.message)
+      setError((err as Error).message)
       setStatus('')
     } finally {
       setPulling(false)
@@ -79,19 +84,19 @@ function PullModal({ onClose, onPulled }) {
 }
 
 export default function ImagesPage() {
-  const [images,    setImages]    = useState([])
+  const [images,    setImages]    = useState<Image[]>([])
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
   const [showPull,  setShowPull]  = useState(false)
-  const [confirmRm, setConfirmRm] = useState(null)
-  const [removing,  setRemoving]  = useState(null)
+  const [confirmRm, setConfirmRm] = useState<Image | null>(null)
+  const [removing,  setRemoving]  = useState<string | null>(null)
 
   const fetchImages = useCallback(async () => {
     try {
       const data = await api.images()
       setImages(data || [])
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setLoading(false)
     }
@@ -99,19 +104,19 @@ export default function ImagesPage() {
 
   useEffect(() => { fetchImages() }, [fetchImages])
 
-  async function handleRemove(img) {
+  async function handleRemove(img: Image) {
     setRemoving(img.Id)
     try {
       await api.imageRemove(img.Id)
       await fetchImages()
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setRemoving(null)
     }
   }
 
-  function fmtRepo(img) {
+  function fmtRepo(img: Image): string {
     if (!img.RepoTags || img.RepoTags.length === 0) return '<none>'
     return img.RepoTags[0]
   }

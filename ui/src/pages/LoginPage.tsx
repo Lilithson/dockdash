@@ -1,15 +1,19 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { api, User } from '../api'
 
-export default function LoginPage({ onLogin }) {
+interface LoginPageProps {
+  onLogin: (user: User) => void
+}
+
+export default function LoginPage({ onLogin }: LoginPageProps) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!username || !password) { setError('Please fill in all fields.'); return }
     setError('')
@@ -20,7 +24,7 @@ export default function LoginPage({ onLogin }) {
       onLogin(data.user)
       navigate('/dashboard/stats', { replace: true })
     } catch (err) {
-      setError(err.message || 'Login failed')
+      setError((err as Error).message || 'Login failed')
     } finally {
       setLoading(false)
     }

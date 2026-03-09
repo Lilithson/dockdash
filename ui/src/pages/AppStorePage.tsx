@@ -1,7 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { api } from '../api'
+import React, { useState, useEffect } from 'react'
+import { api, HubResult } from '../api'
 
-const TEMPLATES = [
+interface Template {
+  name: string
+  image: string
+  desc: string
+  icon: string
+  ports: { host: string; container: string }[]
+  env?: { k: string; v: string }[]
+}
+
+const TEMPLATES: Template[] = [
   { name: 'Nginx',       image: 'nginx:latest',       desc: 'High-performance web server and reverse proxy.',     icon: '🌐', ports: [{ host: '80', container: '80' }] },
   { name: 'PostgreSQL',  image: 'postgres:16',         desc: 'Advanced open-source relational database.',          icon: '🐘', ports: [{ host: '5432', container: '5432' }], env: [{ k: 'POSTGRES_PASSWORD', v: 'changeme' }] },
   { name: 'Redis',       image: 'redis:7-alpine',      desc: 'In-memory data structure store.',                    icon: '🔴', ports: [{ host: '6379', container: '6379' }] },
@@ -16,10 +25,22 @@ const TEMPLATES = [
   { name: 'RabbitMQ',    image: 'rabbitmq:3-management', desc: 'Message broker with management UI.',              icon: '🐇', ports: [{ host: '5672', container: '5672' }, { host: '15672', container: '15672' }] },
 ]
 
-const RESTART_POLICIES = ['no', 'always', 'unless-stopped', 'on-failure']
+const RESTART_POLICIES = ['no', 'always', 'unless-stopped', 'on-failure'] as const
 
-function KvRows({ rows, setRows, kPlaceholder = 'key', vPlaceholder = 'value' }) {
-  function update(i, field, val) {
+interface KvRow {
+  k: string
+  v: string
+}
+
+interface KvRowsProps {
+  rows: KvRow[]
+  setRows: (rows: KvRow[]) => void
+  kPlaceholder?: string
+  vPlaceholder?: string
+}
+
+function KvRows({ rows, setRows, kPlaceholder = 'key', vPlaceholder = 'value' }: KvRowsProps) {
+  function update(i: number, field: keyof KvRow, val: string) {
     setRows(rows.map((r, idx) => idx === i ? { ...r, [field]: val } : r))
   }
   return (
@@ -36,14 +57,19 @@ function KvRows({ rows, setRows, kPlaceholder = 'key', vPlaceholder = 'value' })
   )
 }
 
-function DeployWizard({ image: initImage, onClose }) {
+interface DeployWizardProps {
+  image: string
+  onClose: () => void
+}
+
+function DeployWizard({ image: initImage, onClose }: DeployWizardProps) {
   const [image,    setImage]    = useState(initImage || '')
   const [tag,      setTag]      = useState('latest')
-  const [tags,     setTags]     = useState([])
+  const [tags,     setTags]     = useState<string[]>([])
   const [name,     setName]     = useState('')
-  const [ports,    setPorts]    = useState([{ k: '', v: '' }])
-  const [envs,     setEnvs]     = useState([{ k: '', v: '' }])
-  const [vols,     setVols]     = useState([{ k: '', v: '' }])
+  const [ports,    setPorts]    = useState<KvRow[]>([{ k: '', v: '' }])
+  const [envs,     setEnvs]     = useState<KvRow[]>([{ k: '', v: '' }])
+  const [vols,     setVols]     = useState<KvRow[]>([{ k: '', v: '' }])
   const [restart,  setRestart]  = useState('unless-stopped')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
@@ -72,7 +98,7 @@ function DeployWizard({ image: initImage, onClose }) {
       setSuccess('Image pulled! Creating container…')
 
       // Build request
-      const portBindings = {}
+      const portBindings: Record<string, { HostPort: string }[]> = {}
       ports.filter(p => p.k && p.v).forEach(p => {
         portBindings[`${p.v}/tcp`] = [{ HostPort: p.k }]
       })
@@ -98,7 +124,7 @@ function DeployWizard({ image: initImage, onClose }) {
       setSuccess('Container deployed successfully!')
       setTimeout(onClose, 1500)
     } catch (e) {
-      setError(e.message || 'Deploy failed')
+      setError((e as Error).message || 'Deploy failed')
       setSuccess('')
     } finally {
       setLoading(false)
@@ -173,12 +199,12 @@ function DeployWizard({ image: initImage, onClose }) {
 
 function HubTab() {
   const [query,   setQuery]   = useState('')
-  const [results, setResults] = useState([])
+  const [results, setResults] = useState<HubResult[]>([])
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
-  const [deploy,  setDeploy]  = useState(null)
+  const [deploy,  setDeploy]  = useState<string | null>(null)
 
-  async function handleSearch(e) {
+  async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     if (!query.trim()) return
     setLoading(true); setError('')
@@ -186,7 +212,7 @@ function HubTab() {
       const data = await api.hubSearch(query.trim())
       setResults(data?.results || [])
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setLoading(false)
     }
@@ -228,7 +254,7 @@ function HubTab() {
             <button
               className="btn btn-primary btn-sm"
               style={{ alignSelf: 'flex-start' }}
-              onClick={() => setDeploy(r.name || r.slug)}
+              onClick={() => setDeploy(r.name || r.slug || '')}
             >
               🚀 Deploy
             </button>
@@ -242,7 +268,7 @@ function HubTab() {
 }
 
 function TemplatesTab() {
-  const [deploy, setDeploy] = useState(null)
+  const [deploy, setDeploy] = useState<Template | null>(null)
 
   return (
     <div>

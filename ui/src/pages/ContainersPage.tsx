@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { api } from '../api'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { api, Container, ContainerDetail, ContainerStat } from '../api'
 
-const FILTERS = ['All', 'Running', 'Stopped', 'Exited']
+const FILTERS = ['All', 'Running', 'Stopped', 'Exited'] as const
 
-function statusBadge(state) {
+function statusBadge(state: string | undefined) {
   if (!state) return <span className="badge badge-muted">unknown</span>
   const s = state.toLowerCase()
   if (s === 'running')    return <span className="badge badge-success">running</span>
@@ -13,7 +13,7 @@ function statusBadge(state) {
   return <span className="badge badge-muted">{state}</span>
 }
 
-function fmtPorts(ports) {
+function fmtPorts(ports: Container['Ports']): string {
   if (!ports || ports.length === 0) return '—'
   return ports
     .filter(p => p.PublicPort)
@@ -21,7 +21,7 @@ function fmtPorts(ports) {
     .join(', ') || '—'
 }
 
-function fmtBytes(b) {
+function fmtBytes(b: number | null | undefined): string {
   if (b == null) return '—'
   if (b < 1024) return b + ' B'
   if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'
@@ -29,7 +29,7 @@ function fmtBytes(b) {
   return (b / 1073741824).toFixed(2) + ' GB'
 }
 
-function CpuBar({ pct }) {
+function CpuBar({ pct }: { pct: number | null | undefined }) {
   if (pct == null) return <span className="text-muted">—</span>
   const cls = pct > 80 ? 'danger' : pct > 50 ? 'warning' : ''
   return (
@@ -42,7 +42,7 @@ function CpuBar({ pct }) {
   )
 }
 
-function MemBar({ used, limit }) {
+function MemBar({ used, limit }: { used: number | null | undefined; limit: number }) {
   if (used == null) return <span className="text-muted">—</span>
   const pct = limit > 0 ? (used / limit) * 100 : 0
   const cls = pct > 80 ? 'danger' : pct > 60 ? 'warning' : ''
@@ -56,9 +56,9 @@ function MemBar({ used, limit }) {
   )
 }
 
-function LogsPanel({ containerId }) {
+function LogsPanel({ containerId }: { containerId: string }) {
   const [logs, setLogs] = useState('Loading logs...')
-  const boxRef = useRef(null)
+  const boxRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const token = api.getToken()
@@ -80,14 +80,14 @@ function LogsPanel({ containerId }) {
   return <div className="logs-box" ref={boxRef}>{logs}</div>
 }
 
-function InspectPanel({ container }) {
-  const [detail, setDetail] = useState(null)
+function InspectPanel({ container }: { container: Container }) {
+  const [detail, setDetail] = useState<ContainerDetail | null>(null)
   const [err, setErr] = useState('')
 
   useEffect(() => {
     api.containerInspect(container.Id)
       .then(setDetail)
-      .catch(e => setErr(e.message))
+      .catch((e: Error) => setErr(e.message))
   }, [container.Id])
 
   if (err) return <div className="error-msg">{err}</div>
@@ -158,7 +158,13 @@ function InspectPanel({ container }) {
   )
 }
 
-function ContainerModal({ container, onClose, stats }) {
+interface ContainerModalProps {
+  container: Container
+  onClose: () => void
+  stats: Record<string, ContainerStat>
+}
+
+function ContainerModal({ container, onClose, stats }: ContainerModalProps) {
   const [tab, setTab] = useState('inspect')
   const cStats = stats[container.Id]
 
@@ -192,21 +198,21 @@ function ContainerModal({ container, onClose, stats }) {
 }
 
 export default function ContainersPage() {
-  const [containers, setContainers] = useState([])
-  const [stats,      setStats]      = useState({})
+  const [containers, setContainers] = useState<Container[]>([])
+  const [stats,      setStats]      = useState<Record<string, ContainerStat>>({})
   const [filter,     setFilter]     = useState('All')
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState('')
-  const [selected,   setSelected]   = useState(null)
-  const [actionId,   setActionId]   = useState(null)
-  const [confirmRm,  setConfirmRm]  = useState(null)
+  const [selected,   setSelected]   = useState<Container | null>(null)
+  const [actionId,   setActionId]   = useState<string | null>(null)
+  const [confirmRm,  setConfirmRm]  = useState<Container | null>(null)
 
   const fetchContainers = useCallback(async () => {
     try {
       const data = await api.containers(true)
       setContainers(data || [])
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setLoading(false)
     }
@@ -215,10 +221,10 @@ export default function ContainersPage() {
   const fetchStats = useCallback(async () => {
     try {
       const data = await api.stats()
-      const map = {}
+      const map: Record<string, ContainerStat> = {}
       if (data?.containers) data.containers.forEach(c => { map[c.id] = c })
       setStats(map)
-    } catch {}
+    } catch { /* ignore stats errors */ }
   }, [])
 
   useEffect(() => {
@@ -228,7 +234,7 @@ export default function ContainersPage() {
     return () => clearInterval(t)
   }, [fetchContainers, fetchStats])
 
-  async function doAction(id, action) {
+  async function doAction(id: string, action: string) {
     setActionId(id)
     try {
       if (action === 'start')   await api.containerStart(id)
@@ -237,7 +243,7 @@ export default function ContainersPage() {
       if (action === 'remove')  await api.containerRemove(id)
       await fetchContainers()
     } catch (e) {
-      setError(e.message)
+      setError((e as Error).message)
     } finally {
       setActionId(null)
     }
@@ -307,7 +313,7 @@ export default function ContainersPage() {
                   <td>{statusBadge(c.State)}</td>
                   <td className="td-mono" style={{ fontSize: 11 }}>{fmtPorts(c.Ports)}</td>
                   <td><CpuBar pct={cSt?.cpu_percent} /></td>
-                  <td><MemBar used={cSt?.memory_usage} limit={cSt?.memory_limit} /></td>
+                  <td><MemBar used={cSt?.memory_usage} limit={cSt?.memory_limit ?? 0} /></td>
                   <td>
                     <div className="btn-group">
                       {!isRunning && (
