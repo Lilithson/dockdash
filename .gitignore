@@ -7,9 +7,11 @@ dockdash.exe
 *.out
 coverage.txt
 
-# Frontend node_modules and build artifacts
+# Frontend node_modules (never track)
 ui/node_modules/
-ui/dist/
+
+# Built frontend assets — tracked in git for go:embed.
+# Rebuild with: cd ui && npm run build
 
 # Data directory (runtime data)
 data/dockdash.db
