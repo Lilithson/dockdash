@@ -69,7 +69,8 @@ func (h *StatsHandler) Stream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *StatsHandler) gatherStats(r *http.Request) (*statsResponse, error) {	containers, err := h.docker.ListContainers(r.Context(), false)
+func (h *StatsHandler) gatherStats(r *http.Request) (*statsResponse, error) {
+	containers, err := h.docker.ListContainers(r.Context(), false)
 	if err != nil {
 		return nil, err
 	}

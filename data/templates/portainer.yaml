@@ -1,0 +1,16 @@
+# Portainer CE - Docker Management UI
+name: portainer
+description: Portainer CE – Docker/Kubernetes management UI
+image: portainer/portainer-ce:latest
+category: DevOps
+ports:
+  - host: 9000
+    container: 9000
+  - host: 8000
+    container: 8000
+volumes:
+  - host: /var/run/docker.sock
+    container: /var/run/docker.sock
+  - host: /opt/portainer/data
+    container: /data
+restart_policy: unless-stopped

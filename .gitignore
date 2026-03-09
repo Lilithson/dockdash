@@ -1,0 +1,32 @@
+# Binaries
+dockdash
+dockdash.exe
+
+# Go build artifacts
+*.test
+*.out
+coverage.txt
+
+# Frontend node_modules and build artifacts
+ui/node_modules/
+ui/dist/
+
+# Data directory (runtime data)
+data/dockdash.db
+data/stacks/*.yml
+data/stacks/*.yaml
+
+# Editor/OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Env files with secrets
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+/tmp/

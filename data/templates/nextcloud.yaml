@@ -1,0 +1,22 @@
+# Nextcloud - Personal cloud storage
+name: nextcloud
+description: A safe home for all your data — synchronize photos, documents, contacts, calendars
+image: nextcloud:latest
+category: Storage
+ports:
+  - host: 8888
+    container: 80
+volumes:
+  - host: /opt/nextcloud/data
+    container: /var/www/html
+restart_policy: unless-stopped
+env:
+  - name: NEXTCLOUD_ADMIN_USER
+    value: "admin"
+    description: "Initial admin username"
+  - name: NEXTCLOUD_ADMIN_PASSWORD
+    value: "changeme"
+    description: "Initial admin password — change after first login"
+  - name: SQLITE_DATABASE
+    value: "nextcloud"
+    description: "SQLite database name"
