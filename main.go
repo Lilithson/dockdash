@@ -19,7 +19,7 @@ import (
 var embeddedFiles embed.FS
 
 func main() {
-	port := getEnv("PORT", "8080")
+	port := getEnv("PORT", "9000")
 	dataDir := getEnv("DATA_DIR", "/data")
 	jwtSecret := os.Getenv("JWT_SECRET")
 

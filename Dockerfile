@@ -29,20 +29,26 @@ RUN apk add --no-cache \
     docker-cli \
     docker-cli-compose
 
-# Create non-root user (optional, runs as root for socket access)
-RUN mkdir -p /data/stacks /data/templates
+# Create a non-root user; GID 999 matches the common docker group GID so the
+# socket (mounted at /var/run/docker.sock) remains accessible at runtime.
+RUN grep -q "^docker:" /etc/group || addgroup -g 999 docker && \
+    adduser -D -u 1000 -G docker dockdash && \
+    mkdir -p /data/stacks /data/templates && \
+    chown -R dockdash:docker /data
 
 # Copy the compiled binary
 COPY --from=go-builder /dockdash /usr/local/bin/dockdash
 
-# Copy example templates
-COPY data/templates/ /data/templates/
+# Copy example templates (owned by dockdash so they are writable at runtime)
+COPY --chown=dockdash:docker data/templates/ /data/templates/
 
-EXPOSE 8080
+USER dockdash
+
+EXPOSE 9000
 
 VOLUME ["/data"]
 
-ENV PORT=8080 \
+ENV PORT=9000 \
     DATA_DIR=/data
 
 ENTRYPOINT ["/usr/local/bin/dockdash"]
